@@ -49,6 +49,9 @@
     background:linear-gradient(145deg,#1a2129,#12181f); border:1px solid #2a3947; }
   .s3active .result-bar { animation: reveal .5s ease forwards; animation-delay: 3.1s; }
   .result-bar b { color:var(--accent); font-size:17px; }
+  .loss { color:#ff6b6b; }
+  .urgency { opacity:0; text-align:center; color:var(--muted); font-size:11px; margin-top:8px; }
+  .s3active .urgency { animation: reveal .4s ease forwards; animation-delay: 3.7s; }
 
   .phone input { width:100%; padding:10px; border-radius:8px; border:1px solid #2a3947; background:#0f151d;
     color:var(--text); margin-bottom:8px; font-size:13px; }
@@ -78,6 +81,7 @@
   <div class="scene" id="s1">
     <h1>Is your client's website <span class="accent">quietly losing them customers?</span></h1>
     <p>Most local businesses have no idea what's broken on their own site — until someone shows them.</p>
+    <p style="margin-top:10px; font-size:12.5px; color:var(--accent);">71% of local business sites we've scanned have at least one critical leak.</p>
   </div>
 
   <div class="scene" id="s2">
@@ -92,11 +96,12 @@
       <div class="scan-title">🔍 Live Website Audit</div>
       <div class="sub">Checking tracking, mobile forms, booking, speed...</div>
       <div class="scanline"><div class="scanline-fill"></div></div>
-      <div class="flaw"><div class="badge">!</div><div><b>No conversion tracking detected</b><span>Ad spend may be running blind.</span></div></div>
-      <div class="flaw"><div class="badge">!</div><div><b>No mobile-friendly contact form</b><span>Phone visitors may have no way to reach you.</span></div></div>
-      <div class="flaw"><div class="badge">!</div><div><b>No booking automation</b><span>After-hours leads are likely lost.</span></div></div>
-      <div class="flaw"><div class="badge">!</div><div><b>Slow page load speed</b><span>4.8s response — hurting conversions.</span></div></div>
-      <div class="result-bar"><b>4 of 4</b> revenue leaks found — in under 4 seconds.</div>
+      <div class="flaw"><div class="badge">!</div><div><b>No conversion tracking detected</b><span>Ad spend running blind — est. <b class="loss">$800-1,200/mo</b> wasted.</span></div></div>
+      <div class="flaw"><div class="badge">!</div><div><b>No mobile-friendly contact form</b><span>~<b class="loss">60% of visitors</b> are on mobile and can't reach you.</span></div></div>
+      <div class="flaw"><div class="badge">!</div><div><b>No booking automation</b><span>After-hours leads lost — est. <b class="loss">$1,000+/mo</b> in missed jobs.</span></div></div>
+      <div class="flaw"><div class="badge">!</div><div><b>Slow page load speed</b><span>4.8s load time — <b class="loss">~7% conversion drop</b> per extra second.</span></div></div>
+      <div class="result-bar"><b>4 of 4</b> leaks found — an est. <b style="color:#ff6b6b">$2,400+/mo</b> in missed revenue.</div>
+      <div class="urgency">⚡ 71% of local business sites we've scanned have at least one of these</div>
     </div>
   </div>
 
@@ -115,6 +120,7 @@
     <p>7-day free trial for every client site you add.</p>
     <div class="price">$500-800</div>
     <p>one-time setup, plus $150/mo hosting and maintenance</p>
+    <p style="color:var(--accent); font-size:12.5px; margin-top:6px;">Every day without this, your competitors' agencies are already offering it.</p>
     <div class="cta">Try it free for 7 days</div>
   </div>
 
@@ -123,7 +129,7 @@
 
 <script>
   var scenes = ["s1","s2","s3","s4","s5"];
-  var durations = [3200, 3000, 4200, 3600, 4000];
+  var durations = [3600, 3000, 4700, 3600, 4300];
   var idx = 0;
 
   var progressEl = document.getElementById("progress");
