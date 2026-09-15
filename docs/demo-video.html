@@ -2,158 +2,336 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>LeakSnap — Sales Demo Reel</title>
+<title>LeakSnap — Story Demo Reel</title>
 <style>
-  :root { --bg:#0b0f14; --card:#121821; --accent:#ff5a3c; --text:#e8edf2; --muted:#8ea0b3; --ok:#5fd68a; }
+  :root {
+    --bg:#0b0f14; --card:#121821; --accent:#ff5a3c; --text:#e8edf2; --muted:#8ea0b3; --ok:#5fd68a;
+    --site-bg:#f5f3ef;
+  }
   * { box-sizing:border-box; margin:0; padding:0; }
   html,body { width:100%; height:100%; background:var(--bg); overflow:hidden; }
   body { font-family:-apple-system,Segoe UI,Roboto,sans-serif; color:var(--text);
     display:flex; align-items:center; justify-content:center; }
 
-  .stage { width:460px; height:640px; position:relative; }
-  .scene { position:absolute; inset:0; opacity:0; pointer-events:none; transition:opacity .6s ease;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; }
-  .scene.active { opacity:1; }
+  .stageWrap { position:relative; }
+  .stage { width:900px; height:560px; position:relative; border-radius:16px; overflow:hidden;
+    box-shadow:0 30px 90px rgba(0,0,0,.6); background:var(--bg); }
 
-  #s1 h1 { font-size:30px; line-height:1.3; margin-bottom:14px; }
-  #s1 .accent { color:var(--accent); }
-  #s1 p { color:var(--muted); font-size:15px; }
+  .browser { position:absolute; inset:0; display:flex; flex-direction:column; }
+  .chrome { height:36px; background:#dfe3e8; display:flex; align-items:center; padding:0 14px; gap:10px; flex-shrink:0; }
+  .dots { display:flex; gap:6px; }
+  .dots span { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .dots span:nth-child(1){background:#ff5f57;} .dots span:nth-child(2){background:#febc2e;} .dots span:nth-child(3){background:#28c840;}
+  .addressbar { flex:1; background:#f1f3f5; border-radius:6px; padding:6px 12px; font-size:12px; color:#5b6672; margin-left:6px; }
 
-  #s2 .logo { font-size:46px; margin-bottom:10px; }
-  #s2 h1 { font-size:32px; margin-bottom:8px; }
-  #s2 p { color:var(--muted); font-size:15px; max-width:320px; }
+  .site { flex:1; background:var(--site-bg); position:relative; }
+  .site.shaking { animation: shake .3s ease-in-out infinite; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)}
+    60%{transform:translateX(-3px)} 80%{transform:translateX(3px)}
+  }
 
-  .phone { width:100%; background:#0f151d; border-radius:24px; padding:20px; box-shadow:0 30px 80px rgba(0,0,0,.6); text-align:left; }
-  .url-bar { background:#1a222c; border-radius:8px; padding:10px 14px; font-size:13px; color:var(--muted); margin-bottom:14px;
-    display:flex; align-items:center; gap:8px; }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; }
-  .scan-title { font-size:18px; margin-bottom:2px; }
+  .site-nav { height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 32px;
+    background:#fff; border-bottom:1px solid #e6e6e6; }
+  .site-logo { font-weight:800; color:#1c2733; font-size:15px; }
+  .site-links { display:flex; gap:26px; font-size:13px; color:#4a5561; }
+
+  .hero { background:linear-gradient(160deg,#12181f,#1c2733); height:calc(100% - 56px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    color:#fff; padding:0 40px; gap:14px; }
+  .hero h1 { font-size:26px; }
+  .hero p { color:#a8b4bf; font-size:14px; margin-bottom:8px; }
+
+  .cta-btn { position:relative; background:var(--accent); color:#fff; border:none; padding:14px 26px;
+    border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; transition:transform .08s, filter .15s; min-width:220px; }
+  .cta-btn.hoverfx { filter:brightness(1.12); }
+  .cta-btn.pressed { transform:scale(.94); }
+  .cta-btn .btn-spinner, .cta-btn .btn-error { display:none; }
+  .cta-btn.loading .btn-label { visibility:hidden; }
+  .cta-btn.loading .btn-spinner { display:block; position:absolute; inset:0; margin:auto; width:16px; height:16px;
+    border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+  .cta-btn.error { background:#5a2a24; }
+  .cta-btn.error .btn-label, .cta-btn.error .btn-spinner { display:none; }
+  .cta-btn.error .btn-error { display:block; color:#ffb199; font-size:13px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .dim { position:absolute; inset:0; background:rgba(0,0,0,.55); opacity:0; pointer-events:none;
+    transition:opacity .4s; z-index:5; }
+  .dim.show { opacity:1; }
+
+  .popup { position:absolute; right:24px; bottom:24px; width:280px; background:var(--card);
+    border:1px solid #2a3947; border-radius:14px; padding:16px; display:flex; gap:10px; align-items:flex-start;
+    transform:translateY(30px); opacity:0; transition:transform .4s cubic-bezier(.2,.9,.3,1.2), opacity .4s;
+    z-index:10; box-shadow:0 20px 50px rgba(0,0,0,.5); }
+  .popup.show { transform:translateY(0); opacity:1; }
+  .popup-icon { font-size:22px; }
+  .popup-text { font-size:12.5px; color:var(--muted); line-height:1.4; }
+  .popup-text b { color:#fff; }
+  .popup-btn { display:block; margin-top:10px; width:100%; background:var(--accent); border:none; color:#fff;
+    padding:8px; border-radius:7px; font-weight:700; font-size:12px; cursor:pointer; transition:filter .15s; }
+  .popup.hoverbtn .popup-btn { filter:brightness(1.12); }
+
+  .modal { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .35s; z-index:8; }
+  .modal.show { opacity:1; }
+  .modal-card { width:380px; background:var(--card); border-radius:14px; padding:22px; }
+  .url-bar { background:#1a222c; border-radius:8px; padding:9px 13px; font-size:12.5px; color:var(--muted);
+    margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .modal-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+  .scan-title { font-size:17px; margin-bottom:2px; color:var(--text); }
   .sub { color:var(--muted); font-size:12.5px; margin-bottom:14px; }
   .scanline { height:3px; background:#1a222c; border-radius:2px; overflow:hidden; margin-bottom:14px; }
   .scanline-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),#ffb199); border-radius:2px; }
-  .s3active .scanline-fill { animation: fill 3s ease-in-out forwards; }
+  #scanCard.scanning .scanline-fill { animation:fill 4s ease-in-out forwards; }
   @keyframes fill { to { width:100%; } }
-  .flaw { opacity:0; transform:translateY(8px); background:var(--card); border-radius:10px; padding:10px 12px;
-    margin-bottom:8px; border:1px solid #1c2733; display:flex; gap:9px; align-items:flex-start; }
-  .s3active .flaw { animation: reveal .45s ease forwards; }
-  .s3active .flaw:nth-child(1) { animation-delay: .7s; }
-  .s3active .flaw:nth-child(2) { animation-delay: 1.3s; }
-  .s3active .flaw:nth-child(3) { animation-delay: 1.9s; }
-  .s3active .flaw:nth-child(4) { animation-delay: 2.5s; }
+
+  .flaws-list .flaw { opacity:0; transform:translateY(8px); background:#0f151d; border-radius:10px;
+    padding:10px 12px; margin-bottom:8px; border:1px solid #1c2733; display:flex; gap:9px; align-items:flex-start; }
+  .flaws-list .flaw.highlight { border-color:var(--accent); }
+  #scanCard.scanning .flaws-list .flaw { animation:reveal .4s ease forwards; }
+  #scanCard.scanning .flaws-list .flaw:nth-child(1) { animation-delay:.9s; }
+  #scanCard.scanning .flaws-list .flaw:nth-child(2) { animation-delay:1.9s; }
+  #scanCard.scanning .flaws-list .flaw:nth-child(3) { animation-delay:2.9s; }
+  #scanCard.scanning .flaws-list .flaw:nth-child(4) { animation-delay:3.9s; }
   @keyframes reveal { to { opacity:1; transform:translateY(0); } }
-  .badge { width:18px; height:18px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; background:#3a1414; color:#ff6b6b; }
-  .flaw b { font-size:12.5px; }
+  .badge { width:18px; height:18px; border-radius:50%; flex-shrink:0; display:flex; align-items:center;
+    justify-content:center; font-size:11px; font-weight:700; background:#3a1414; color:#ff6b6b; }
+  .flaw b { font-size:12.5px; color:var(--text); }
+  .flaw.highlight b { color:var(--accent); }
   .flaw span { display:block; color:var(--muted); font-size:11px; margin-top:1px; }
+
   .result-bar { opacity:0; text-align:center; margin-top:4px; padding:12px; border-radius:10px;
     background:linear-gradient(145deg,#1a2129,#12181f); border:1px solid #2a3947; }
-  .s3active .result-bar { animation: reveal .5s ease forwards; animation-delay: 3.1s; }
-  .result-bar b { color:var(--accent); font-size:17px; }
+  #scanCard.scanning .result-bar { animation:reveal .45s ease forwards; animation-delay:4.6s; }
+  .result-bar b { color:var(--accent); font-size:16px; }
   .loss { color:#ff6b6b; }
   .urgency { opacity:0; text-align:center; color:var(--muted); font-size:11px; margin-top:8px; }
-  .s3active .urgency { animation: reveal .4s ease forwards; animation-delay: 3.7s; }
+  #scanCard.scanning .urgency { animation:reveal .4s ease forwards; animation-delay:5.3s; }
 
-  .phone input { width:100%; padding:10px; border-radius:8px; border:1px solid #2a3947; background:#0f151d;
-    color:var(--text); margin-bottom:8px; font-size:13px; }
-  .typewriter { border-right:2px solid var(--accent); white-space:nowrap; overflow:hidden; width:0; }
-  .s4active .typewriter { animation: type 1.6s steps(20) forwards; }
-  @keyframes type { to { width: 15ch; } }
-  .unlock-btn { width:100%; padding:11px; border:none; border-radius:8px; background:var(--accent); color:#fff;
-    font-weight:700; font-size:13px; text-align:center; opacity:0; }
-  .s4active .unlock-btn { animation: reveal .4s ease forwards; animation-delay: 2.2s; }
-  .lead-note { opacity:0; text-align:center; color:var(--ok); font-size:12.5px; margin-top:10px; }
-  .s4active .lead-note { animation: reveal .4s ease forwards; animation-delay: 2.9s; }
-
-  #s5 h1 { font-size:26px; margin-bottom:10px; }
-  #s5 .price { font-size:38px; font-weight:800; color:var(--accent); margin:10px 0; }
-  #s5 p { color:var(--muted); font-size:14px; max-width:320px; margin-bottom:6px; }
-  #s5 .cta { margin-top:16px; padding:14px 30px; background:var(--accent); color:#fff; border-radius:8px;
+  .pricing { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; color:var(--text); background:var(--bg);
+    opacity:0; pointer-events:none; transition:opacity .4s; z-index:9; padding:40px; }
+  .pricing.show { opacity:1; }
+  .pricing h1 { font-size:28px; margin-bottom:10px; }
+  .pricing .price { font-size:40px; font-weight:800; color:var(--accent); margin:10px 0; }
+  .pricing p { color:var(--muted); font-size:14px; max-width:360px; margin-bottom:6px; }
+  .pricing .urgent-line { color:var(--accent); font-size:12.5px; margin-top:6px; }
+  .pricing .cta { margin-top:18px; padding:14px 30px; background:var(--accent); color:#fff; border-radius:8px;
     font-weight:700; font-size:14px; }
 
-  .progress { position:absolute; bottom:-28px; left:0; right:0; display:flex; gap:6px; justify-content:center; }
-  .progress .seg { width:36px; height:3px; border-radius:2px; background:#1c2733; }
+  .cursor { position:absolute; width:20px; height:20px; left:450px; top:18px; z-index:50; pointer-events:none;
+    background:#fff;
+    clip-path:polygon(0% 0%, 0% 70%, 25% 55%, 40% 85%, 55% 78%, 40% 50%, 70% 50%);
+    filter:drop-shadow(1px 0 0 #1c2733) drop-shadow(-1px 0 0 #1c2733) drop-shadow(0 1px 0 #1c2733) drop-shadow(0 -1px 0 #1c2733);
+    transition:left .28s ease, top .28s ease, opacity .3s, transform .1s; }
+  .cursor.clicking { transform:scale(.78); }
+  .cursor.hidden { opacity:0; }
+
+  .ripple { position:absolute; width:10px; height:10px; border:2px solid var(--accent); border-radius:50%;
+    transform:translate(-50%,-50%) scale(0); opacity:1; pointer-events:none; z-index:49;
+    animation:rippleAnim .5s ease-out forwards; }
+  @keyframes rippleAnim { to { transform:translate(-50%,-50%) scale(3.2); opacity:0; } }
+
+  .progress { display:flex; gap:6px; justify-content:center; margin-top:16px; }
+  .progress .seg { width:32px; height:3px; border-radius:2px; background:#1c2733; }
   .progress .seg.done { background:var(--accent); }
 </style>
 </head>
 <body>
-<div class="stage">
+<div class="stageWrap">
+  <div class="stage" id="stage">
 
-  <div class="scene" id="s1">
-    <h1>Is your client's website <span class="accent">quietly losing them customers?</span></h1>
-    <p>Most local businesses have no idea what's broken on their own site — until someone shows them.</p>
-    <p style="margin-top:10px; font-size:12.5px; color:var(--accent);">71% of local business sites we've scanned have at least one critical leak.</p>
-  </div>
-
-  <div class="scene" id="s2">
-    <div class="logo">🔍</div>
-    <h1>LeakSnap</h1>
-    <p>A free-audit widget that scans any website in seconds and turns curious visitors into warm leads — for you.</p>
-  </div>
-
-  <div class="scene" id="s3">
-    <div class="phone">
-      <div class="url-bar"><span class="dot"></span> scanning: roofpro-example.com</div>
-      <div class="scan-title">🔍 Live Website Audit</div>
-      <div class="sub">Checking tracking, mobile forms, booking, speed...</div>
-      <div class="scanline"><div class="scanline-fill"></div></div>
-      <div class="flaw"><div class="badge">!</div><div><b>No conversion tracking detected</b><span>Ad spend running blind — est. <b class="loss">$800-1,200/mo</b> wasted.</span></div></div>
-      <div class="flaw"><div class="badge">!</div><div><b>No mobile-friendly contact form</b><span>~<b class="loss">60% of visitors</b> are on mobile and can't reach you.</span></div></div>
-      <div class="flaw"><div class="badge">!</div><div><b>No booking automation</b><span>After-hours leads lost — est. <b class="loss">$1,000+/mo</b> in missed jobs.</span></div></div>
-      <div class="flaw"><div class="badge">!</div><div><b>Slow page load speed</b><span>4.8s load time — <b class="loss">~7% conversion drop</b> per extra second.</span></div></div>
-      <div class="result-bar"><b>4 of 4</b> leaks found — an est. <b style="color:#ff6b6b">$2,400+/mo</b> in missed revenue.</div>
-      <div class="urgency">⚡ 71% of local business sites we've scanned have at least one of these</div>
+    <div class="browser">
+      <div class="chrome">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <div class="addressbar">🔒 roofprosolutions.com</div>
+      </div>
+      <div class="site" id="site">
+        <nav class="site-nav">
+          <div class="site-logo">RoofPro Solutions</div>
+          <div class="site-links"><span>Home</span><span>Services</span><span>About</span><span>Contact</span></div>
+        </nav>
+        <div class="hero">
+          <h1>Quality Roofing You Can Trust</h1>
+          <p>Serving homeowners for over 15 years — fast, reliable, guaranteed.</p>
+          <button class="cta-btn" id="ctaBtn">
+            <span class="btn-label">Book a Free Estimate</span>
+            <span class="btn-spinner"></span>
+            <span class="btn-error">✕ Still not working</span>
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="scene" id="s4">
-    <div class="phone">
-      <div class="scan-title">Unlock the full report</div>
-      <div class="sub">Enter your email to see exactly how to fix these:</div>
-      <div class="typewriter" style="color:var(--muted); font-size:13px; margin-bottom:10px;">owner@roofpro.com</div>
-      <div class="unlock-btn">Unlock Full Report</div>
-      <div class="lead-note">Lead captured — sent straight to your dashboard</div>
+    <div class="dim" id="dim"></div>
+
+    <div class="popup" id="popup">
+      <div class="popup-icon">🔍</div>
+      <div class="popup-text"><b>LeakSnap</b><br>Struggling to find what's broken on your site? We'll find it in 10 seconds.</div>
+      <div>
+        <button class="popup-btn" id="popupBtn">Free Audit →</button>
+      </div>
     </div>
-  </div>
 
-  <div class="scene" id="s5">
-    <h1>One script tag.<br>Leads on autopilot.</h1>
-    <p>7-day free trial for every client site you add.</p>
-    <div class="price">$500-800</div>
-    <p>one-time setup, plus $150/mo hosting and maintenance</p>
-    <p style="color:var(--accent); font-size:12.5px; margin-top:6px;">Every day without this, your competitors' agencies are already offering it.</p>
-    <div class="cta">Try it free for 7 days</div>
+    <div class="modal" id="scanModal">
+      <div class="modal-card" id="scanCard">
+        <div class="url-bar"><span class="modal-dot"></span> scanning: roofprosolutions.com</div>
+        <div class="scan-title">🔍 Live Website Audit</div>
+        <div class="sub">Checking tracking, mobile forms, booking, speed...</div>
+        <div class="scanline"><div class="scanline-fill"></div></div>
+        <div class="flaws-list">
+          <div class="flaw"><div class="badge">!</div><div><b>No conversion tracking detected</b><span>Ad spend running blind — est. <b class="loss">$800-1,200/mo</b> wasted.</span></div></div>
+          <div class="flaw"><div class="badge">!</div><div><b>No mobile-friendly contact form</b><span>~<b class="loss">60% of visitors</b> are on mobile and can't reach you.</span></div></div>
+          <div class="flaw highlight"><div class="badge">!</div><div><b>No booking automation</b><span>This is exactly why your "Book a Free Estimate" button just froze — after-hours leads lost every time.</span></div></div>
+          <div class="flaw"><div class="badge">!</div><div><b>Slow page load speed</b><span>4.8s load time — <b class="loss">~7% conversion drop</b> per extra second.</span></div></div>
+        </div>
+        <div class="result-bar"><b>4 of 4</b> leaks found — an est. <b style="color:#ff6b6b">$2,400+/mo</b> in missed revenue.</div>
+        <div class="urgency">⚡ 71% of local business sites we've scanned have at least one of these</div>
+      </div>
+    </div>
+
+    <div class="pricing" id="pricing">
+      <h1>One script tag.<br>Leads on autopilot.</h1>
+      <p>7-day free trial for every client site you add.</p>
+      <div class="price">$500-800</div>
+      <p>one-time setup, plus $150/mo hosting and maintenance</p>
+      <p class="urgent-line">Every day without this, your competitors' agencies are already offering it.</p>
+      <div class="cta">Try it free for 7 days</div>
+    </div>
+
+    <div class="cursor" id="cursor"></div>
   </div>
 
   <div class="progress" id="progress"></div>
 </div>
 
 <script>
-  var scenes = ["s1","s2","s3","s4","s5"];
-  var durations = [3600, 3000, 4700, 3600, 4300];
-  var idx = 0;
+  var stage = document.getElementById('stage');
+  var site = document.getElementById('site');
+  var ctaBtn = document.getElementById('ctaBtn');
+  var dim = document.getElementById('dim');
+  var popup = document.getElementById('popup');
+  var scanModal = document.getElementById('scanModal');
+  var scanCard = document.getElementById('scanCard');
+  var pricing = document.getElementById('pricing');
+  var cursor = document.getElementById('cursor');
+  var progressEl = document.getElementById('progress');
 
-  var progressEl = document.getElementById("progress");
-  scenes.forEach(function(){ var d = document.createElement("div"); d.className="seg"; progressEl.appendChild(d); });
-  var segs = progressEl.querySelectorAll(".seg");
-
-  function show(i) {
-    scenes.forEach(function(id, n){
-      var el = document.getElementById(id);
-      el.classList.toggle("active", n === i);
-      if (id === "s3") el.classList.toggle("s3active", n === i);
-      if (id === "s4") el.classList.toggle("s4active", n === i);
-    });
-    segs.forEach(function(seg, n){ seg.classList.toggle("done", n <= i); });
+  var SCENE_COUNT = 6;
+  for (var i = 0; i < SCENE_COUNT; i++) {
+    var seg = document.createElement('div');
+    seg.className = 'seg';
+    progressEl.appendChild(seg);
+  }
+  var segs = progressEl.querySelectorAll('.seg');
+  function setProgress(n) {
+    segs.forEach(function (s, i) { s.classList.toggle('done', i < n); });
   }
 
-  function next() {
-    show(idx);
-    setTimeout(function(){
-      idx = (idx + 1) % scenes.length;
-      next();
-    }, durations[idx]);
+  function moveCursor(x, y, dur) {
+    cursor.style.transition = 'left ' + dur + 'ms cubic-bezier(.3,0,.2,1), top ' + dur + 'ms cubic-bezier(.3,0,.2,1), opacity .3s, transform .1s';
+    cursor.style.left = x + 'px';
+    cursor.style.top = y + 'px';
   }
-  next();
+
+  function clickAt(x, y) {
+    cursor.classList.add('clicking');
+    setTimeout(function () { cursor.classList.remove('clicking'); }, 120);
+    var r = document.createElement('div');
+    r.className = 'ripple';
+    r.style.left = x + 'px';
+    r.style.top = y + 'px';
+    stage.appendChild(r);
+    setTimeout(function () { r.remove(); }, 550);
+  }
+
+  var timers = [];
+  function schedule(fn, t) { timers.push(setTimeout(fn, t)); }
+
+  var TOTAL = 29000;
+
+  function reset() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    document.querySelectorAll('.ripple').forEach(function (r) { r.remove(); });
+    site.classList.remove('shaking');
+    ctaBtn.classList.remove('hoverfx', 'pressed', 'loading', 'error');
+    popup.classList.remove('show', 'hoverbtn');
+    dim.classList.remove('show');
+    scanModal.classList.remove('show');
+    scanCard.classList.remove('scanning');
+    pricing.classList.remove('show');
+    cursor.classList.remove('hidden');
+    cursor.style.transition = 'none';
+    cursor.style.left = '450px';
+    cursor.style.top = '18px';
+    void cursor.offsetWidth;
+    cursor.style.transition = 'left .28s ease, top .28s ease, opacity .3s, transform .1s';
+    setProgress(0);
+  }
+
+  function play() {
+    reset();
+
+    schedule(function () { moveCursor(625, 64, 300); }, 200);
+    schedule(function () { moveCursor(800, 64, 280); }, 650);
+    schedule(function () { moveCursor(450, 355, 320); }, 1100);
+    schedule(function () { ctaBtn.classList.add('hoverfx'); }, 1450);
+
+    schedule(function () { setProgress(1); clickAt(450, 355); ctaBtn.classList.add('pressed'); }, 4500);
+    schedule(function () { ctaBtn.classList.remove('pressed'); ctaBtn.classList.add('loading'); }, 4650);
+
+    schedule(function () { setProgress(2); site.classList.add('shaking'); }, 7000);
+    schedule(function () { moveCursor(442, 350, 100); clickAt(442, 350); }, 7050);
+    schedule(function () { moveCursor(460, 360, 100); clickAt(460, 360); }, 7270);
+    schedule(function () { clickAt(452, 353); }, 7490);
+    schedule(function () { moveCursor(458, 358, 100); clickAt(458, 358); }, 7710);
+    schedule(function () { clickAt(447, 352); }, 7930);
+    schedule(function () { moveCursor(463, 348, 100); clickAt(463, 348); }, 8150);
+    schedule(function () { clickAt(455, 360); }, 8370);
+    schedule(function () { moveCursor(448, 355, 100); clickAt(448, 355); }, 8590);
+    schedule(function () { clickAt(459, 351); }, 8810);
+    schedule(function () { moveCursor(452, 356, 100); clickAt(452, 356); }, 9030);
+    schedule(function () { clickAt(444, 349); }, 9250);
+    schedule(function () { moveCursor(466, 353, 100); clickAt(466, 353); }, 9470);
+    schedule(function () { clickAt(451, 358); }, 9690);
+    schedule(function () { moveCursor(457, 347, 100); clickAt(457, 347); }, 9910);
+    schedule(function () { clickAt(449, 355); }, 10130);
+    schedule(function () { moveCursor(453, 352, 120); }, 10350);
+    schedule(function () {
+      site.classList.remove('shaking');
+      ctaBtn.classList.remove('loading');
+      ctaBtn.classList.add('error');
+    }, 11500);
+
+    schedule(function () { setProgress(3); popup.classList.add('show'); }, 12000);
+    schedule(function () { moveCursor(700, 430, 380); }, 12150);
+    schedule(function () { moveCursor(736, 508, 300); popup.classList.add('hoverbtn'); }, 12600);
+    schedule(function () { clickAt(736, 508); }, 13200);
+    schedule(function () { popup.classList.remove('show', 'hoverbtn'); }, 13500);
+
+    schedule(function () {
+      setProgress(4);
+      cursor.classList.add('hidden');
+      dim.classList.add('show');
+      scanModal.classList.add('show');
+      scanCard.classList.add('scanning');
+    }, 16000);
+
+    schedule(function () {
+      setProgress(5);
+      scanModal.classList.remove('show');
+      scanCard.classList.remove('scanning');
+      pricing.classList.add('show');
+    }, 23000);
+    schedule(function () {
+      dim.classList.remove('show');
+    }, 23300);
+
+    schedule(play, TOTAL);
+  }
+
+  play();
 </script>
 </body>
 </html>
