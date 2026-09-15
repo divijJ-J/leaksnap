@@ -17,6 +17,13 @@
   .stage { width:900px; height:560px; position:relative; border-radius:16px; overflow:hidden;
     box-shadow:0 30px 90px rgba(0,0,0,.6); background:var(--bg); }
 
+  .startOverlay { position:absolute; inset:0; z-index:100; background:rgba(0,0,0,.8); color:#fff;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;
+    cursor:pointer; text-align:center; }
+  .startOverlay.hide { display:none; }
+  .startOverlay b { font-size:19px; }
+  .startOverlay span { color:var(--muted); font-size:13px; }
+
   .browser { position:absolute; inset:0; display:flex; flex-direction:column; }
   .chrome { height:36px; background:#dfe3e8; display:flex; align-items:center; padding:0 14px; gap:10px; flex-shrink:0; }
   .dots { display:flex; gap:6px; }
@@ -123,7 +130,7 @@
     background:#fff;
     clip-path:polygon(0% 0%, 0% 70%, 25% 55%, 40% 85%, 55% 78%, 40% 50%, 70% 50%);
     filter:drop-shadow(1px 0 0 #1c2733) drop-shadow(-1px 0 0 #1c2733) drop-shadow(0 1px 0 #1c2733) drop-shadow(0 -1px 0 #1c2733);
-    transition:left .28s ease, top .28s ease, opacity .3s, transform .1s; }
+    transition:left .26s ease, top .26s ease, opacity .3s, transform .1s; }
   .cursor.clicking { transform:scale(.78); }
   .cursor.hidden { opacity:0; }
 
@@ -135,11 +142,6 @@
   .progress { display:flex; gap:6px; justify-content:center; margin-top:16px; }
   .progress .seg { width:32px; height:3px; border-radius:2px; background:#1c2733; }
   .progress .seg.done { background:var(--accent); }
-
-  .sound-btn { position:absolute; top:10px; right:10px; z-index:100; background:#12181f; color:#e8edf2;
-    border:1px solid #2a3947; padding:8px 14px; border-radius:20px; font-size:12px; cursor:pointer;
-    font-family:-apple-system,Segoe UI,Roboto,sans-serif; }
-  .sound-btn.hidden { display:none; }
 </style>
 </head>
 <body>
@@ -206,7 +208,11 @@
     </div>
 
     <div class="cursor" id="cursor"></div>
-    <button class="sound-btn" id="soundBtn">🔊 Enable sound</button>
+
+    <div class="startOverlay" id="startOverlay">
+      <b>▶ Click to start</b>
+      <span>(needed once to enable sound for recording)</span>
+    </div>
   </div>
 
   <div class="progress" id="progress"></div>
@@ -223,63 +229,7 @@
   var pricing = document.getElementById('pricing');
   var cursor = document.getElementById('cursor');
   var progressEl = document.getElementById('progress');
-  var soundBtn = document.getElementById('soundBtn');
-
-  /* ---------- Sound engine (synthesized, no audio files) ---------- */
-  var audioCtx = null;
-  var soundOn = false;
-
-  function ensureCtx() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-  }
-
-  function tone(freq, dur, type, vol, delay) {
-    if (!soundOn) return;
-    ensureCtx();
-    var t0 = audioCtx.currentTime + (delay || 0);
-    var osc = audioCtx.createOscillator();
-    var gain = audioCtx.createGain();
-    osc.type = type || 'sine';
-    osc.frequency.setValueAtTime(freq, t0);
-    gain.gain.setValueAtTime(0, t0);
-    gain.gain.linearRampToValueAtTime(vol || 0.12, t0 + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start(t0);
-    osc.stop(t0 + dur + 0.02);
-  }
-
-  function sndClick() { tone(1100, 0.04, 'square', 0.05); }
-  function sndRageClick() { tone(280 + Math.random() * 60, 0.06, 'square', 0.06); }
-  function sndError() { tone(160, 0.35, 'sawtooth', 0.07); tone(120, 0.4, 'sawtooth', 0.05, 0.05); }
-  function sndWhoosh() {
-    if (!soundOn) return;
-    ensureCtx();
-    var t0 = audioCtx.currentTime;
-    var osc = audioCtx.createOscillator();
-    var gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(700, t0);
-    osc.frequency.exponentialRampToValueAtTime(220, t0 + 0.3);
-    gain.gain.setValueAtTime(0.09, t0);
-    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start(t0);
-    osc.stop(t0 + 0.34);
-  }
-  function sndReveal(i) { tone(520 + i * 90, 0.18, 'triangle', 0.09); }
-  function sndResult() { tone(660, 0.5, 'triangle', 0.1); tone(880, 0.5, 'triangle', 0.08, 0.12); }
-  function sndSuccess() {
-    [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.35, 'triangle', 0.09, i * 0.1); });
-  }
-
-  soundBtn.addEventListener('click', function () {
-    ensureCtx();
-    soundOn = true;
-    soundBtn.classList.add('hidden');
-    tone(660, 0.15, 'triangle', 0.1);
-  });
+  var startOverlay = document.getElementById('startOverlay');
 
   var SCENE_COUNT = 6;
   for (var i = 0; i < SCENE_COUNT; i++) {
@@ -290,6 +240,71 @@
   var segs = progressEl.querySelectorAll('.seg');
   function setProgress(n) {
     segs.forEach(function (s, i) { s.classList.toggle('done', i < n); });
+  }
+
+  var actx = null;
+  function ensureAudio() {
+    if (!actx) {
+      try { actx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { actx = null; }
+    } else if (actx.state === 'suspended') {
+      actx.resume();
+    }
+  }
+
+  function tone(freq, start, dur, type, peak) {
+    if (!actx) return;
+    var t0 = actx.currentTime + start;
+    var osc = actx.createOscillator();
+    var gain = actx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(peak, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain).connect(actx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  }
+
+  function playClick() {
+    tone(1150, 0, 0.055, 'square', 0.12);
+    tone(1700, 0.006, 0.035, 'square', 0.06);
+  }
+
+  function playPop() {
+    tone(880, 0, 0.16, 'sine', 0.18);
+    tone(1320, 0.11, 0.2, 'sine', 0.18);
+  }
+
+  function playFrustrationGrunt() {
+    if (!actx) return;
+    var t0 = actx.currentTime;
+    var osc = actx.createOscillator();
+    var filter = actx.createBiquadFilter();
+    var gain = actx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(170, t0);
+    osc.frequency.exponentialRampToValueAtTime(85, t0 + 0.5);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(700, t0);
+    filter.Q.value = 1.2;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.22, t0 + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+    osc.connect(filter).connect(gain).connect(actx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.6);
+  }
+
+  function playHeavenlyChime(bright) {
+    var notes = bright
+      ? [783.99, 987.77, 1174.66, 1567.98]
+      : [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach(function (f, i) {
+      tone(f, i * 0.16, 1.3, 'sine', 0.09);
+      tone(f * 2, i * 0.16 + 0.02, 0.9, 'sine', 0.03);
+    });
   }
 
   function moveCursor(x, y, dur) {
@@ -307,11 +322,13 @@
     r.style.top = y + 'px';
     stage.appendChild(r);
     setTimeout(function () { r.remove(); }, 550);
+    playClick();
   }
+
   var timers = [];
   function schedule(fn, t) { timers.push(setTimeout(fn, t)); }
 
-  var TOTAL = 29000;
+  var TOTAL = 26500;
 
   function reset() {
     timers.forEach(clearTimeout);
@@ -329,50 +346,49 @@
     cursor.style.left = '450px';
     cursor.style.top = '18px';
     void cursor.offsetWidth;
-    cursor.style.transition = 'left .28s ease, top .28s ease, opacity .3s, transform .1s';
+    cursor.style.transition = 'left .26s ease, top .26s ease, opacity .3s, transform .1s';
     setProgress(0);
   }
 
   function play() {
     reset();
 
-    schedule(function () { moveCursor(625, 64, 300); }, 200);
-    schedule(function () { moveCursor(800, 64, 280); }, 650);
-    schedule(function () { moveCursor(450, 355, 320); }, 1100);
-    schedule(function () { ctaBtn.classList.add('hoverfx'); }, 1450);
+    schedule(function () { moveCursor(625, 64, 250); }, 150);
+    schedule(function () { moveCursor(800, 64, 220); }, 500);
+    schedule(function () { moveCursor(450, 355, 280); }, 850);
+    schedule(function () { ctaBtn.classList.add('hoverfx'); }, 1250);
 
-    schedule(function () { setProgress(1); clickAt(450, 355); ctaBtn.classList.add('pressed'); sndClick(); }, 4500);
-    schedule(function () { ctaBtn.classList.remove('pressed'); ctaBtn.classList.add('loading'); }, 4650);
+    schedule(function () { setProgress(1); clickAt(450, 355); ctaBtn.classList.add('pressed'); }, 2300);
+    schedule(function () { ctaBtn.classList.remove('pressed'); ctaBtn.classList.add('loading'); }, 2450);
 
-    schedule(function () { setProgress(2); site.classList.add('shaking'); }, 7000);
-    schedule(function () { moveCursor(442, 350, 100); clickAt(442, 350); sndRageClick(); }, 7050);
-    schedule(function () { moveCursor(460, 360, 100); clickAt(460, 360); sndRageClick(); }, 7270);
-    schedule(function () { clickAt(452, 353); sndRageClick(); }, 7490);
-    schedule(function () { moveCursor(458, 358, 100); clickAt(458, 358); sndRageClick(); }, 7710);
-    schedule(function () { clickAt(447, 352); sndRageClick(); }, 7930);
-    schedule(function () { moveCursor(463, 348, 100); clickAt(463, 348); sndRageClick(); }, 8150);
-    schedule(function () { clickAt(455, 360); sndRageClick(); }, 8370);
-    schedule(function () { moveCursor(448, 355, 100); clickAt(448, 355); sndRageClick(); }, 8590);
-    schedule(function () { clickAt(459, 351); sndRageClick(); }, 8810);
-    schedule(function () { moveCursor(452, 356, 100); clickAt(452, 356); sndRageClick(); }, 9030);
-    schedule(function () { clickAt(444, 349); sndRageClick(); }, 9250);
-    schedule(function () { moveCursor(466, 353, 100); clickAt(466, 353); sndRageClick(); }, 9470);
-    schedule(function () { clickAt(451, 358); sndRageClick(); }, 9690);
-    schedule(function () { moveCursor(457, 347, 100); clickAt(457, 347); sndRageClick(); }, 9910);
-    schedule(function () { clickAt(449, 355); sndRageClick(); }, 10130);
-    schedule(function () { moveCursor(453, 352, 120); }, 10350);
+    schedule(function () { setProgress(2); site.classList.add('shaking'); playFrustrationGrunt(); }, 4500);
+    schedule(function () { moveCursor(442, 350, 100); clickAt(442, 350); }, 4700);
+    schedule(function () { moveCursor(460, 360, 100); clickAt(460, 360); }, 4920);
+    schedule(function () { clickAt(452, 353); }, 5140);
+    schedule(function () { moveCursor(458, 358, 100); clickAt(458, 358); }, 5360);
+    schedule(function () { clickAt(447, 352); }, 5580);
+    schedule(function () { moveCursor(463, 348, 100); clickAt(463, 348); }, 5800);
+    schedule(function () { clickAt(455, 360); }, 6020);
+    schedule(function () { moveCursor(448, 355, 100); clickAt(448, 355); }, 6240);
+    schedule(function () { clickAt(459, 351); playFrustrationGrunt(); }, 6460);
+    schedule(function () { moveCursor(452, 356, 100); clickAt(452, 356); }, 6900);
+    schedule(function () { clickAt(444, 349); }, 7120);
+    schedule(function () { moveCursor(466, 353, 100); clickAt(466, 353); }, 7340);
+    schedule(function () { clickAt(451, 358); }, 7560);
+    schedule(function () { moveCursor(457, 347, 100); clickAt(457, 347); }, 7780);
+    schedule(function () { clickAt(449, 355); }, 8000);
+    schedule(function () { moveCursor(453, 352, 120); }, 8220);
     schedule(function () {
       site.classList.remove('shaking');
       ctaBtn.classList.remove('loading');
       ctaBtn.classList.add('error');
-      sndError();
-    }, 11500);
+    }, 8900);
 
-    schedule(function () { setProgress(3); popup.classList.add('show'); sndWhoosh(); }, 12000);
-    schedule(function () { moveCursor(700, 430, 380); }, 12150);
-    schedule(function () { moveCursor(736, 508, 300); popup.classList.add('hoverbtn'); }, 12600);
-    schedule(function () { clickAt(736, 508); sndClick(); }, 13200);
-    schedule(function () { popup.classList.remove('show', 'hoverbtn'); }, 13500);
+    schedule(function () { setProgress(3); popup.classList.add('show'); playPop(); }, 9500);
+    schedule(function () { moveCursor(700, 430, 360); }, 9650);
+    schedule(function () { moveCursor(736, 508, 280); popup.classList.add('hoverbtn'); }, 10050);
+    schedule(function () { clickAt(736, 508); }, 10500);
+    schedule(function () { popup.classList.remove('show', 'hoverbtn'); }, 10800);
 
     schedule(function () {
       setProgress(4);
@@ -380,28 +396,28 @@
       dim.classList.add('show');
       scanModal.classList.add('show');
       scanCard.classList.add('scanning');
-    }, 16000);
-    schedule(function () { sndReveal(0); }, 16000 + 900);
-    schedule(function () { sndReveal(1); }, 16000 + 1900);
-    schedule(function () { sndReveal(2); }, 16000 + 2900);
-    schedule(function () { sndReveal(3); }, 16000 + 3900);
-    schedule(function () { sndResult(); }, 16000 + 4600);
+      playHeavenlyChime(false);
+    }, 13500);
+    schedule(function () { playHeavenlyChime(true); }, 13500 + 4600);
 
     schedule(function () {
       setProgress(5);
       scanModal.classList.remove('show');
       scanCard.classList.remove('scanning');
       pricing.classList.add('show');
-      sndSuccess();
-    }, 23000);
+    }, 20500);
     schedule(function () {
       dim.classList.remove('show');
-    }, 23300);
+    }, 20800);
 
     schedule(play, TOTAL);
   }
 
-  play();
+  startOverlay.addEventListener('click', function () {
+    ensureAudio();
+    startOverlay.classList.add('hide');
+    play();
+  });
 </script>
 </body>
 </html>
