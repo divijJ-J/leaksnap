@@ -16,9 +16,12 @@ load speed) and turns that into a lead-gen mechanism, sold two ways:
 
 ## Business goal
 $5,000 in 30 days. Primary path now: sell the white-label widget to small
-web-dev/SEO/local-marketing agencies as a $500-800 one-time integration +
-$150/mo upsell. Two agencies (Adexorb, IndexGraph — both small web-dev/SEO
-shops) have verbally agreed to trial it before paying. Getting them live
+web-dev/SEO/local-marketing agencies as a $300 one-time integration +
+$150/mo upsell. Agencies then use the tool to sell audit reports to their
+own clients (local business owners) for $500-800 each - that resale margin
+is the hook in the pitch/demo. Two agencies (Adexorb, IndexGraph — both
+small web-dev/SEO shops) have verbally agreed to trial it before paying.
+Getting them live
 and getting a testimonial is the immediate priority — everything else
 (more agencies, standalone site) comes after that proof point.
 
