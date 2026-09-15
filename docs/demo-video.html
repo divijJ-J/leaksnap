@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LeakSnap — Live Audit Demo</title>
+<style>
+  :root { --bg:#0b0f14; --card:#121821; --accent:#ff5a3c; --text:#e8edf2; --muted:#8ea0b3; --ok:#5fd68a; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text);
+    height:100vh; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .phone { width:420px; background:#0f151d; border-radius:24px; padding:20px; box-shadow:0 30px 80px rgba(0,0,0,.6); }
+  .url-bar { background:#1a222c; border-radius:8px; padding:10px 14px; font-size:13px; color:var(--muted); margin-bottom:16px;
+    display:flex; align-items:center; gap:8px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
+  h2 { font-size:19px; margin-bottom:4px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:18px; }
+  .scanline { height:3px; background:#1a222c; border-radius:2px; overflow:hidden; margin-bottom:18px; }
+  .scanline-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),#ffb199); border-radius:2px;
+    animation: fill 3.6s ease-in-out forwards; }
+  @keyframes fill { to { width:100%; } }
+  .flaw { opacity:0; transform:translateY(8px); background:var(--card); border-radius:10px; padding:12px 14px;
+    margin-bottom:10px; border:1px solid #1c2733; display:flex; gap:10px; align-items:flex-start;
+    animation: reveal .5s ease forwards; }
+  .flaw:nth-child(1) { animation-delay: .8s; }
+  .flaw:nth-child(2) { animation-delay: 1.5s; }
+  .flaw:nth-child(3) { animation-delay: 2.2s; }
+  .flaw:nth-child(4) { animation-delay: 2.9s; }
+  @keyframes reveal { to { opacity:1; transform:translateY(0); } }
+  .badge { width:20px; height:20px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; background:#3a1414; color:#ff6b6b; }
+  .flaw b { font-size:13.5px; }
+  .flaw span { display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+  .result-bar { opacity:0; text-align:center; margin-top:6px; padding:14px; border-radius:10px;
+    background:linear-gradient(145deg,#1a2129,#12181f); border:1px solid #2a3947;
+    animation: reveal .5s ease forwards; animation-delay: 3.6s; }
+  .result-bar b { color:var(--accent); font-size:20px; }
+  .cursor { display:inline-block; width:2px; height:14px; background:var(--accent); vertical-align:middle;
+    animation: blink 1s step-end infinite; margin-left:2px; }
+  @keyframes blink { 50% { opacity:0; } }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="url-bar"><span class="dot"></span> scanning: roofpro-example.com<span class="cursor"></span></div>
+  <h2>🔍 Live Website Audit</h2>
+  <div class="sub">Checking tracking, mobile forms, booking, speed...</div>
+  <div class="scanline"><div class="scanline-fill"></div></div>
+
+  <div class="flaw"><div class="badge">!</div><div><b>No conversion tracking detected</b><span>Ad spend may be running blind — no Pixel/GA4 found.</span></div></div>
+  <div class="flaw"><div class="badge">!</div><div><b>No mobile-friendly contact form</b><span>Visitors on phones may have no way to reach you.</span></div></div>
+  <div class="flaw"><div class="badge">!</div><div><b>No booking automation</b><span>After-hours leads are likely being lost.</span></div></div>
+  <div class="flaw"><div class="badge">!</div><div><b>Slow page load speed</b><span>4.8s response time — hurting conversions & ad Quality Score.</span></div></div>
+
+  <div class="result-bar"><b>4 of 4</b> revenue leaks found — in under 4 seconds.</div>
+</div>
+
+<script>
+  // Loops the whole animation every 6s so it plays continuously for screen recording
+  setInterval(function () {
+    document.body.style.display = "none";
+    void document.body.offsetHeight;
+    document.body.style.display = "flex";
+  }, 6000);
+</script>
+</body>
+</html>
