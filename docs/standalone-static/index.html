@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SiteLeakCheck — Find Your Website's Revenue Leaks</title>
+<style>
+  :root { --bg:#0b0f14; --card:#121821; --accent:#ff5a3c; --text:#e8edf2; --muted:#8ea0b3; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 48px 20px 80px; }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  p.sub { color: var(--muted); margin-top: 0; }
+  .scan-box { display:flex; gap:8px; margin-top: 24px; }
+  input[type=text] { flex:1; padding: 14px 16px; border-radius: 8px; border: 1px solid #22303f; background:#0f151d; color:var(--text); font-size:15px; }
+  button { padding: 14px 22px; border-radius: 8px; border:none; background: var(--accent); color:white; font-weight:600; cursor:pointer; font-size:15px; }
+  button:disabled { opacity:0.5; cursor:default; }
+  .card { background: var(--card); border-radius: 12px; padding: 20px; margin-top: 16px; border:1px solid #1c2733; }
+  .flaw { display:flex; align-items:flex-start; gap:10px; padding:12px 0; border-bottom:1px solid #1c2733; }
+  .flaw:last-child { border-bottom:none; }
+  .badge { flex-shrink:0; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; }
+  .badge.bad { background:#3a1414; color:#ff6b6b; }
+  .badge.ok { background:#123a1e; color:#5fd68a; }
+  .locked { filter: blur(5px); user-select:none; pointer-events:none; }
+  .paywall { text-align:center; margin-top: 18px; padding: 22px; border-radius: 12px; background: linear-gradient(145deg,#1a2129,#12181f); border:1px solid #2a3947; }
+  .paywall h3 { margin-top:0; }
+  .price { font-size: 32px; font-weight:800; color: var(--accent); }
+  .cta { display:inline-block; margin-top:14px; padding:14px 28px; background:var(--accent); color:white; border-radius:8px; font-weight:700; text-decoration:none; }
+  .loading { color: var(--muted); margin-top: 20px; }
+  .error { color:#ff6b6b; margin-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔍 SiteLeakCheck</h1>
+  <p class="sub">Paste any business website below. We'll instantly find the revenue leaks costing them customers — tracking gaps, broken mobile forms, missing booking systems, and slow load speed.</p>
+
+  <div class="scan-box">
+    <input type="text" id="urlInput" placeholder="e.g. yourbusiness.com" />
+    <button id="scanBtn" onclick="runScan()">Scan Now</button>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+async function runScan() {
+  const url = document.getElementById('urlInput').value.trim();
+  const btn = document.getElementById('scanBtn');
+  const results = document.getElementById('results');
+  if (!url) return;
+
+  btn.disabled = true;
+  btn.textContent = "Scanning...";
+  results.innerHTML = '<p class="loading">Analyzing site — checking tracking, forms, booking, speed...</p>';
+
+  try {
+    const res = await fetch('/api/scan', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url})
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.textContent = "Scan Now";
+
+    if (data.error) {
+      results.innerHTML = `<p class="error">Couldn't reach that site: ${data.error}</p>`;
+      return;
+    }
+
+    renderResults(data);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = "Scan Now";
+    results.innerHTML = `<p class="error">Something went wrong. Try again.</p>`;
+  }
+}
+
+function renderResults(data) {
+  const results = document.getElementById('results');
+  const flawed = data.checks.filter(c => c.present);
+  const clean = data.checks.filter(c => !c.present);
+
+  let html = `<div class="card"><strong>${data.url}</strong> — ${data.flaws_found} of 4 checks flagged an issue.</div>`;
+
+  // Show first flaw free, rest locked behind paywall
+  data.checks.forEach((c, i) => {
+    const isFree = i === 0;
+    const badgeClass = c.present ? 'bad' : 'ok';
+    const badgeChar = c.present ? '!' : '✓';
+    const lockedClass = isFree ? '' : 'locked';
+    html += `<div class="card ${lockedClass}">
+      <div class="flaw">
+        <div class="badge ${badgeClass}">${badgeChar}</div>
+        <div><strong>${c.flaw}</strong><br><span style="color:#8ea0b3;font-size:14px;">${isFree ? c.detail : 'Full detail unlocks in the paid report...'}</span></div>
+      </div>
+    </div>`;
+  });
+
+  html += `<div class="paywall">
+    <h3>Unlock the Full Revenue Leak Report</h3>
+    <div class="price">$99</div>
+    <p style="color:#8ea0b3;">Full flaw breakdown + fix priority + downloadable PDF you can act on today.</p>
+    <a class="cta" href="#" onclick="alert('Wire your Stripe/PayPal payment link here.'); return false;">Get Full Report — $99</a>
+  </div>`;
+
+  results.innerHTML = html;
+}
+</script>
+</body>
+</html>

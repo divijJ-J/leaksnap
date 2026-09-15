@@ -1,0 +1,17 @@
+{
+  "demo-agency": {
+    "name": "Demo Agency",
+    "notification_email": "",
+    "accent": "#ff5a3c"
+  },
+  "adexorb": {
+    "name": "Adexorb",
+    "notification_email": "",
+    "accent": "#ff5a3c"
+  },
+  "indexgraph": {
+    "name": "IndexGraph",
+    "notification_email": "",
+    "accent": "#ff5a3c"
+  }
+}
