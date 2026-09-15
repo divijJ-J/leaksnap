@@ -97,9 +97,13 @@
       var res = await fetch(API_BASE + "/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url }),
+        body: JSON.stringify({ url: url, agency_id: AGENCY_ID }),
       });
       var data = await res.json();
+      if (res.status === 402) {
+        results.innerHTML = '<p class="lsw-muted">This trial has ended. Contact us to keep it active.</p>';
+        return;
+      }
       if (!res.ok || data.error) {
         results.innerHTML = '<p class="lsw-muted">' + (data.error || "Could not scan that site.") + "</p>";
         return;

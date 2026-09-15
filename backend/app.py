@@ -44,6 +44,9 @@ def _db():
     return conn
 
 
+TRIAL_DAYS = int(os.environ.get("TRIAL_DAYS", "7"))
+
+
 def _init_db():
     conn = _db()
     conn.execute(
@@ -59,8 +62,46 @@ def _init_db():
         )
         """
     )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS agency_status (
+            agency_id TEXT PRIMARY KEY,
+            first_seen TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 0
+        )
+        """
+    )
     conn.commit()
     conn.close()
+
+
+def _check_access(agency_id):
+    """Returns (allowed: bool, reason: str|None). Lazily starts the trial
+    clock on an agency's first request, then blocks once trial expires
+    unless it's been marked active (paid) via /admin/activate."""
+    conn = _db()
+    row = conn.execute(
+        "SELECT * FROM agency_status WHERE agency_id = ?", (agency_id,)
+    ).fetchone()
+    if row is None:
+        conn.execute(
+            "INSERT INTO agency_status (agency_id, first_seen, active) VALUES (?, ?, 0)",
+            (agency_id, datetime.datetime.utcnow().isoformat()),
+        )
+        conn.commit()
+        conn.close()
+        return True, None
+
+    if row["active"]:
+        conn.close()
+        return True, None
+
+    first_seen = datetime.datetime.fromisoformat(row["first_seen"])
+    days_elapsed = (datetime.datetime.utcnow() - first_seen).days
+    conn.close()
+    if days_elapsed >= TRIAL_DAYS:
+        return False, f"Trial expired ({TRIAL_DAYS} days). Contact us to activate."
+    return True, None
 
 
 def _load_agencies():
@@ -148,8 +189,13 @@ def api_scan():
 
     data = request.get_json(force=True, silent=True) or {}
     url = (data.get("url") or "").strip()
+    agency_id = (data.get("agency_id") or "unknown").strip() or "unknown"
     if not url:
         return jsonify({"error": "Missing url"}), 400
+
+    allowed, reason = _check_access(agency_id)
+    if not allowed:
+        return jsonify({"error": reason}), 402
 
     result = scan(url)
     if "error" in result:
@@ -178,6 +224,10 @@ def api_lead():
         return jsonify({"error": "Missing url or email"}), 400
     if not _valid_email(email):
         return jsonify({"error": "Invalid email"}), 400
+
+    allowed, reason = _check_access(agency_id)
+    if not allowed:
+        return jsonify({"error": reason}), 402
 
     result = scan(url)
     if "error" in result:
@@ -272,6 +322,24 @@ SNIPPET_HTML = """
 </body>
 </html>
 """
+
+
+@app.route("/admin/activate")
+def admin_activate():
+    if not _admin_ok():
+        return jsonify({"error": "Unauthorized. Set ADMIN_TOKEN and pass ?token="}), 401
+    agency_id = request.args.get("agency_id", "").strip()
+    if not agency_id:
+        return jsonify({"error": "Missing agency_id"}), 400
+    conn = _db()
+    conn.execute(
+        "INSERT INTO agency_status (agency_id, first_seen, active) VALUES (?, ?, 1) "
+        "ON CONFLICT(agency_id) DO UPDATE SET active = 1",
+        (agency_id, datetime.datetime.utcnow().isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"agency_id": agency_id, "active": True})
 
 
 @app.route("/admin/leads")
